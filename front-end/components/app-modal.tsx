@@ -47,7 +47,7 @@ export function AppModal({ active, open, onOpenChange }: AppModalProps) {
                   <Link
                     href={active.iframeUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="text-gray-400 text-sm hover:text-gray-500 transition-colors duration-100 mt-2 justify-center"
                   >
                     Open in new tab
@@ -58,7 +58,7 @@ export function AppModal({ active, open, onOpenChange }: AppModalProps) {
                         active.prompt
                       )}`}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-lg"
                     >
                       <Shuffle size={16} /> Open in ChatGPT
