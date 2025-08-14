@@ -108,9 +108,10 @@
       transform-style: preserve-3d;
       transition: transform 640ms cubic-bezier(.2,.8,.2,1), filter 240ms ease;
       box-shadow: var(--shadow);
+      will-change: transform;
       background: transparent;
     }
-    .card-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; border-radius: var(--radius); }
+    .card-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; border-radius: var(--radius); will-change: transform; }
     .card.flipped .card-inner { transform: rotateY(180deg); transition: transform 640ms cubic-bezier(.2,.8,.2,1); }
 
     .card-face {
@@ -313,6 +314,9 @@
         { id: 10, en: 'Can you help me?', es: '¿Puede ayudarme?', fr: 'Pouvez-vous m\'aider ?', ja: '手伝っていただけますか？' }
       ];
 
+      const ANIM_MS = 420;
+      const PHRASES_LENGTH = PHRASES.length;
+
       function detectUILang() {
         const nav = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'];
         const shortlist = nav.map(l => (l || '').toLowerCase().slice(0,2));
@@ -381,7 +385,7 @@
 
       function resetDeck() {
         learned = new Set();
-        order = fisherYates(PHRASES.map((_, i) => i));
+        order = fisherYates(Array.from({ length: PHRASES_LENGTH }, (_, i) => i));
         currentIdx = 0;
         els.card.classList.remove('flipped');
         updateCard(true);
@@ -389,8 +393,8 @@
       }
 
       function updateProgress() {
-        const left = PHRASES.length - learned.size;
-        const total = PHRASES.length;
+        const left = PHRASES_LENGTH - learned.size;
+        const total = PHRASES_LENGTH;
         els.progressBar.style.width = ((total - left) / total * 100).toFixed(1) + '%';
         els.progressCount.textContent = (left) + ' / ' + total;
         els.learnedBtn.disabled = left === 0;
@@ -398,7 +402,7 @@
       }
 
       function currentPhrase() {
-        if (learned.size >= PHRASES.length) return null;
+        if (learned.size >= PHRASES_LENGTH) return null;
         const idx = order[currentIdx];
         return PHRASES[idx];
       }
@@ -419,10 +423,11 @@
         els.frontLangBadge.textContent = (UI_STRINGS[uiLang]?.front || 'Front') + ' · ' + LANG_NAMES[uiLang][frontLang];
         els.backLangBadge.textContent = (UI_STRINGS[uiLang]?.back || 'Back') + ' · ' + LANG_NAMES[uiLang][targetLang];
         if (animateIn) {
-          els.card.classList.remove('out');
-          void els.card.offsetWidth; // reflow
-          els.card.classList.add('in');
-          setTimeout(() => els.card.classList.remove('in'), 420);
+          els.card.classList.remove('out', 'in');
+          requestAnimationFrame(() => {
+            els.card.classList.add('in');
+            setTimeout(() => els.card.classList.remove('in'), ANIM_MS);
+          });
         }
       }
 
@@ -441,7 +446,8 @@
         els.card.classList.add('out');
         setTimeout(() => {
           learned.add(p.id);
-          order = order.filter(i => PHRASES[i].id !== p.id);
+          // remove current index in-place for lower GC pressure
+          order.splice(currentIdx, 1);
           if (order.length === 0) {
             updateProgress();
             els.card.classList.remove('out');
@@ -455,7 +461,7 @@
           updateProgress();
           updateCard(true);
           locked = false;
-        }, 420);
+        }, ANIM_MS);
       }
 
       function shuffleDeck() {
@@ -465,7 +471,7 @@
         els.card.classList.add('shuffle-anim');
         setTimeout(() => {
           els.card.classList.remove('shuffle-anim');
-        }, 420);
+        }, ANIM_MS);
         // rotate current card to a different spot and reshuffle order
         order = fisherYates(order);
         currentIdx = 0;
@@ -474,17 +480,15 @@
       }
 
       function bindEvents() {
-        els.card.addEventListener('click', flipCard);
+        els.card.addEventListener('click', flipCard, { passive: true });
         els.card.addEventListener('keydown', (e) => {
           if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
           if (e.key === 'ArrowRight') { markLearned(); }
           if (e.key === 'ArrowLeft') { shuffleDeck(); }
         });
 
-        els.shuffleBtn.addAction = 'shuffle';
-        els.learnedBtn.addAction = 'learned';
-        els.shuffleBtn.addEventListener('click', shuffleDeck);
-        els.learnedBtn.addEventListener('click', markLearned);
+        els.shuffleBtn.addEventListener('click', shuffleDeck, { passive: true });
+        els.learnedBtn.addEventListener('click', markLearned, { passive: true });
 
         els.targetLang.addEventListener('change', () => {
           targetLang = els.targetLang.value;
@@ -492,7 +496,7 @@
           resetDeck();
         });
 
-        window.addEventListener('resize', () => { void els.card.offsetWidth; });
+        // removed resize forced reflow for performance; not needed for current animations
       }
 
       function init() {
