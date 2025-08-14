@@ -4,7 +4,7 @@ import path from "path";
 
 function detectPublicSlugs(): string[] {
   try {
-    const publicDir = path.join(__dirname, "public");
+    const publicDir = path.join(process.cwd(), "public");
     const entries = fs.readdirSync(publicDir, { withFileTypes: true });
     return entries
       .filter(
@@ -18,16 +18,27 @@ function detectPublicSlugs(): string[] {
   }
 }
 
-const slugs = detectPublicSlugs();
-
 const nextConfig: NextConfig = {
   output: "export",
+  reactStrictMode: true,
+  poweredByHeader: false,
   async rewrites() {
-    // Allow pretty URLs in dev by serving /slug -> /slug/index.html
-    return slugs.map((slug) => ({
-      source: `/${slug}`,
-      destination: `/${slug}/index.html`,
-    }));
+    // dev 時のみリライトを適用
+    if (process.env.NODE_ENV !== "development") return [];
+
+    const publicDir = path.join(process.cwd(), "public");
+    const hasRootIndex = fs.existsSync(path.join(publicDir, "index.html"));
+    const slugs = detectPublicSlugs();
+
+    return [
+      // ルートの index.html が存在する場合に / をリライト
+      ...(hasRootIndex ? [{ source: "/", destination: "/index.html" }] : []),
+      // /slug -> /slug/index.html を提供
+      ...slugs.map((slug) => ({
+        source: `/${slug}`,
+        destination: `/${slug}/index.html`,
+      })),
+    ];
   },
   // Optional: if you ever add next/image back, uncomment below
   // images: { unoptimized: true },
