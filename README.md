@@ -1,5 +1,13 @@
 # GPT-5 Coding Examples
 
+[English](README.md) | [日本語](README.ja.md)
+
+A collection of demo applications generated from single GPT-5 prompts, illustrating website, frontend, game, and interactive UI scaffolding.
+
+---
+
+# GPT-5 Coding Examples
+
 This repository contains a curated collection of demo applications **generated entirely in a single [GPT-5](https://platform.openai.com/docs/models/gpt-5) prompt**, without writing any code by hand.
 
 These demos were selected to showcase the model’s strengths in coding — especially quickly scaffolding websites, front-end applications, games, and interactive UIs from natural-language descriptions. They’re intended as inspiration for you to build your own ideas.
